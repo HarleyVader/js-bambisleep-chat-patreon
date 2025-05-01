@@ -1,0 +1,39 @@
+{
+  "name": "js-patreon-bambissleep.chat",
+  "version": "1.0.0",
+  "description": "Patreon Oauth2 Flow for Bambisleep.chat",
+  "keywords": [
+    "Patreon",
+    "Oauth2",
+    "PAtronage",
+    "verification",
+    "Bambisleep.chat",
+    "Tier",
+    "Fetch",
+    "for",
+    "Benefits",
+    "activation",
+    "for",
+    "bambisleep.chat"
+  ],
+  "homepage": "https://github.com/HarleyVader/js-patreon-bambissleep.chat#readme",
+  "bugs": {
+    "url": "https://github.com/HarleyVader/js-patreon-bambissleep.chat/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HarleyVader/js-patreon-bambissleep.chat.git"
+  },
+  "license": "MIT",
+  "author": "melkanea",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2"
+  }
+}
