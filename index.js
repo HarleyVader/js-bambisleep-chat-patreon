@@ -97,5 +97,7 @@ app.get('/status', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+  const serverUrl = `http://localhost:${PORT}`;
   console.log(`Server running on port ${PORT}`);
+  console.log(`Server URL: ${serverUrl}`);
 });
