@@ -1,39 +1,59 @@
 import express from 'express';
-import { getAuthUrl, exchangeCodeForTokens, getPatronInfo } from '../services/patreon.js';
+import { getAuthUrl, getTokens, getPatronData } from '../services/patreon.js';
+import { saveUser } from '../db.js';
 
 const router = express.Router();
 
-// Start OAuth flow - redirect to Patreon
+// Auth redirect to Patreon
 router.get('/login', (req, res) => {
-  const authUrl = getAuthUrl();
-  res.redirect(authUrl);
+  res.redirect(getAuthUrl());
 });
 
-// Callback endpoint after Patreon authorization
+// Patreon redirect callback
 router.get('/redirect', async (req, res) => {
   const { code } = req.query;
   
   if (!code) {
-    return res.status(400).send('Authorization code missing');
+    return res.redirect('/?error=missing_code');
   }
   
   try {
-    // Exchange auth code for access token
-    const tokens = await exchangeCodeForTokens(code);
+    // Exchange code for tokens
+    const tokens = await getTokens(code);
     
-    // Get patron info using the token
-    const patronInfo = await getPatronInfo(tokens.access_token);
+    if (tokens.error) {
+      return res.redirect(`/?error=${tokens.error}`);
+    }
     
-    // In a real app, you'd save tokens and user info to database
-    // For demo, we'll just show the patron info
-    res.json({
-      status: 'success',
-      patron: patronInfo
-    });
-  } catch (error) {
-    console.error('OAuth error:', error);
-    res.status(500).send('Authentication failed');
+    // Get patron data
+    const patronData = await getPatronData(tokens.access_token);
+    const user = patronData.data;
+    
+    // Save user and tokens
+    await saveUser(
+      { 
+        id: user.id, 
+        email: user.attributes.email,
+        fullName: user.attributes.full_name
+      }, 
+      tokens
+    );
+    
+    // Set session
+    req.session.patreonId = user.id;
+    
+    // Redirect to status page
+    res.redirect('/status');
+  } catch (err) {
+    console.error('Auth callback error:', err);
+    res.redirect('/?error=server_error');
   }
+});
+
+// Logout
+router.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/');
 });
 
 export { router as oauthRouter };

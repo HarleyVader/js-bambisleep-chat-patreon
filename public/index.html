@@ -3,67 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patreon Verification for BambiSleep.chat</title>
+  <title>BambiSleep Patron Verification</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
+      font-family: -apple-system, sans-serif;
+      max-width: 600px;
       margin: 0 auto;
       padding: 20px;
-      line-height: 1.6;
     }
     .btn {
       display: inline-block;
-      background-color: #F96854;
+      background: #F96854;
       color: white;
       padding: 10px 20px;
       text-decoration: none;
       border-radius: 4px;
-      font-weight: bold;
     }
-    .container {
-      margin-top: 40px;
-      text-align: center;
-    }
-    #result {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      display: none;
+    .error {
+      color: red;
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
-  <h1>Patreon Verification for BambiSleep.chat</h1>
+  <h1>BambiSleep Patron Verification</h1>
+  
+  <p>Verify your Patreon membership status:</p>
+  
+  <p id="error" class="error" style="display: none;"></p>
   
   <p>
-    This service verifies your Patreon membership status for access to BambiSleep.chat premium content.
+    <a href="/auth/patreon" class="btn">Login with Patreon</a>
   </p>
   
-  <div class="container">
-    <a href="/oauth/login" class="btn">Login with Patreon</a>
-  </div>
-  
-  <div id="result"></div>
-  
   <script>
-    // Simple script to show results if redirected back with data
-    document.addEventListener('DOMContentLoaded', () => {
-      // Check if we have patron data in URL (in a real app, use a proper state parameter)
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('patron')) {
-        const patronData = JSON.parse(decodeURIComponent(urlParams.get('patron')));
-        const resultDiv = document.getElementById('result');
-        
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = `
-          <h3>Verification Result</h3>
-          <p>Status: ${patronData.isPatron ? 'Verified Patron' : 'Not a patron'}</p>
-          ${patronData.tierName ? `<p>Tier: ${patronData.tierName}</p>` : ''}
-          ${patronData.amountCents ? `<p>Pledge: $${(patronData.amountCents / 100).toFixed(2)}</p>` : ''}
-        `;
-      }
-    });
+    // Show error messages if any
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    
+    if (error) {
+      const errorElement = document.getElementById('error');
+      errorElement.style.display = 'block';
+      errorElement.textContent = `Error: ${error.replace(/_/g, ' ')}`;
+    }
   </script>
 </body>
 </html>

@@ -22,7 +22,7 @@ export function getAuthUrl() {
 }
 
 // Exchange authorization code for access token
-export async function exchangeCodeForTokens(code) {
+export async function getTokens(code) {
   const response = await fetch('https://www.patreon.com/api/oauth2/token', {
     method: 'POST',
     headers: {
@@ -38,12 +38,15 @@ export async function exchangeCodeForTokens(code) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to exchange token');
+    console.error('Token exchange error:', await response.text());
+    return { error: 'Failed to exchange token' };
   }
   
   return response.json();
 }
+
+// Add alias for function name
+export const exchangeCodeForTokens = getTokens;
 
 // Get patron information using the access token
 export async function getPatronInfo(accessToken) {
@@ -70,12 +73,15 @@ export async function getPatronInfo(accessToken) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.errors?.[0]?.detail || 'Failed to fetch patron data');
+    console.error('Patron data error:', await response.text());
+    return { error: 'Failed to fetch patron data' };
   }
   
   return response.json();
 }
+
+// Add alias for function name
+export const getPatronData = getPatronInfo;
 
 // Verify if a user has specific membership tier
 export function verifyMembershipTier(patronData, requiredAmountCents = 0) {
@@ -131,8 +137,8 @@ export async function refreshTokens(refreshToken) {
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to refresh token');
+    console.error('Token refresh error:', await response.text());
+    return { error: 'Failed to refresh token' };
   }
   
   return response.json();

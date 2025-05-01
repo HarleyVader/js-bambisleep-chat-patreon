@@ -34,6 +34,50 @@ This is a lightweight ES6 JavaScript implementation for verifying Patreon patron
 - Develop status indicator for current patronage level
 - Add simple admin panel for configuration
 
+## Implementation Plan
+
+### Phase 1: Core Functionality
+- [x] Setup basic Express server
+- [x] Implement Patreon OAuth2 flow (authorization, token exchange)
+- [x] Create patron data retrieval functionality
+- [x] Implement membership verification logic
+- [ ] Add SQLite database for token storage
+  - Create users table with fields: id, patreon_id, email, access_token, refresh_token, token_expiry
+- [ ] Implement token storage and refresh mechanism
+  - Add middleware to check token expiration
+  - Auto-refresh tokens when expired
+- [ ] Add express-session for user session management
+- [ ] Complete OAuth flow with success/error handling
+
+### Phase 2: Frontend Components
+- [ ] Create simple index.html with login button
+- [ ] Design status page to display patron tier
+  - Show tier name and benefits
+  - Display pledge amount
+  - Show active/inactive status
+- [ ] Add error/success notification components
+- [ ] Implement basic CSS styling
+
+### Phase 3: Integration Features 
+- [ ] Create REST API endpoints for Bambisleep.chat
+  - GET `/api/verify`: Verify if user has active patron status
+  - GET `/api/user/tier`: Get user's current tier details
+- [ ] Implement webhook receiver for Patreon events
+  - Handle `members:pledge:create` events
+  - Handle `members:pledge:update` events
+  - Handle `members:pledge:delete` events
+- [ ] Create webhook processor to update user status
+- [ ] Build basic admin view for membership status
+
+### Phase 4: Performance & Security
+- [ ] Add in-memory caching for patron data (5-minute TTL)
+- [ ] Implement basic rate limiting (100 requests/minute per user)
+- [ ] Add security headers
+  - Content-Security-Policy
+  - X-XSS-Protection
+  - X-Content-Type-Options
+- [ ] Create API documentation
+
 ## Getting Started
 
 1. Register a client application on [Patreon](https://www.patreon.com/portal/registration/register-clients)
