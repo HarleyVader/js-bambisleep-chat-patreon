@@ -28,8 +28,10 @@
   "author": "melkanea",
   "type": "module",
   "main": "index.js",
+  
   "scripts": {
-    "test": "node index.js"
+    "test": "node index.js",
+    "start": "node index.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
