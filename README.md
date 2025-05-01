@@ -41,41 +41,41 @@ This is a lightweight ES6 JavaScript implementation for verifying Patreon patron
 - [x] Implement Patreon OAuth2 flow (authorization, token exchange)
 - [x] Create patron data retrieval functionality
 - [x] Implement membership verification logic
-- [ ] Add SQLite database for token storage
-  - Create users table with fields: id, patreon_id, email, access_token, refresh_token, token_expiry
-- [ ] Implement token storage and refresh mechanism
-  - Add middleware to check token expiration
-  - Auto-refresh tokens when expired
-- [ ] Add express-session for user session management
-- [ ] Complete OAuth flow with success/error handling
+- [x] Add MongoDB database for token storage
+  - [x] Create users collection with fields: patreonId, email, fullName, accessToken, refreshToken, tokenExpiry
+- [x] Implement token storage and refresh mechanism
+  - [x] Add middleware to check token expiration
+  - [x] Auto-refresh tokens when expired
+- [x] Add express-session for user session management
+- [x] Complete OAuth flow with success/error handling
 
 ### Phase 2: Frontend Components
-- [ ] Create simple index.html with login button
-- [ ] Design status page to display patron tier
-  - Show tier name and benefits
-  - Display pledge amount
-  - Show active/inactive status
-- [ ] Add error/success notification components
-- [ ] Implement basic CSS styling
+- [x] Create simple index.html with login button
+- [x] Design status page to display patron tier
+  - [x] Show patron information
+  - [x] Display pledge amount
+  - [x] Show active/inactive status
+- [x] Add error notification components
+- [x] Implement basic CSS styling
 
 ### Phase 3: Integration Features 
-- [ ] Create REST API endpoints for Bambisleep.chat
-  - GET `/api/verify`: Verify if user has active patron status
-  - GET `/api/user/tier`: Get user's current tier details
-- [ ] Implement webhook receiver for Patreon events
-  - Handle `members:pledge:create` events
-  - Handle `members:pledge:update` events
-  - Handle `members:pledge:delete` events
-- [ ] Create webhook processor to update user status
+- [x] Create REST API endpoints for Bambisleep.chat
+  - [x] GET `/api/verify`: Verify if user has active patron status
+  - [x] GET `/api/user/tier`: Get user's current tier details
+- [x] Implement webhook receiver for Patreon events
+  - [x] Handle `members:create` events
+  - [x] Handle `members:update` events
+  - [x] Handle `members:delete` events
+- [x] Create webhook processor to update user status
 - [ ] Build basic admin view for membership status
 
 ### Phase 4: Performance & Security
-- [ ] Add in-memory caching for patron data (5-minute TTL)
-- [ ] Implement basic rate limiting (100 requests/minute per user)
-- [ ] Add security headers
-  - Content-Security-Policy
-  - X-XSS-Protection
-  - X-Content-Type-Options
+- [x] Add token expiry handling with refresh buffer
+- [x] Implement basic rate limiting (100 requests/minute per user)
+- [x] Add security headers
+  - [x] Content-Security-Policy
+  - [x] X-XSS-Protection
+  - [x] X-Content-Type-Options
 - [ ] Create API documentation
 
 ## Getting Started
@@ -85,8 +85,10 @@ This is a lightweight ES6 JavaScript implementation for verifying Patreon patron
    - `PATREON_CLIENT_ID`: Your Patreon client ID
    - `PATREON_CLIENT_SECRET`: Your Patreon client secret
    - `REDIRECT_URL`: OAuth redirect URL
+   - `MONGODB_URI`: MongoDB connection string
+   - `SESSION_SECRET`: Secret for Express sessions
 3. Install dependencies: `npm install`
-4. Start the service: `npm start`
+4. Start the service: `node index.js`
 
 ## API Usage
 
@@ -109,9 +111,9 @@ Basic verification flow:
 1. User clicks login button
 2. User is redirected to Patreon for authorization
 3. After authorization, Patreon redirects back with a code
-3. Your server exchanges that code for access and refresh tokens
-4. The tokens are used to fetch patron information
-5. Patron status and tier information is verified
+4. Your server exchanges that code for access and refresh tokens
+5. The tokens are used to fetch patron information
+6. Patron status and tier information is verified
 
 ## Code Implementation
 
@@ -179,7 +181,7 @@ async function getPatronData(accessToken) {
 }
 
 // Step 4: Verify membership tier
-function verifyTier(patronData, requiredAmountCents = 0) {
+function verifyMembershipTier(patronData, requiredAmountCents = 0) {
   // Check if user has active membership
   const memberships = patronData?.included?.filter(item => item.type === 'member')
   
@@ -197,7 +199,7 @@ function verifyTier(patronData, requiredAmountCents = 0) {
 }
 
 // Refresh tokens when expired
-async function refreshToken(refreshToken) {
+async function refreshTokens(refreshToken) {
   const params = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
@@ -214,32 +216,4 @@ async function refreshToken(refreshToken) {
   return response.json()
 }
 
-export { getAuthUrl, getTokens, getPatronData, verifyTier, refreshToken }
-
-## Key Technical Details
-
-### Required Headers
-- Always include a `User-Agent` header or risk 403 errors.
-- Use Bearer token authorization for all API requests.
-
-### APIv2 Core Differences
-- The `Pledges` resource is replaced by `Members`.
-- Data attributes must be explicitly requested with `fields` and `include` parameters.
-- No data except `type` and `id` is returned by default.
-
-### Important Scopes
-- `identity` - Basic user info.
-- `identity[email]` - User email.
-- `identity.memberships` - Membership status (critical for verification).
-
-### Rate Limits
-- **Per client**: 100 requests per 2 seconds.
-- **Per token**: 100 requests per minute.
-- Handle `429` responses by checking `retry_after_seconds`.
-
-### Security
-- Never expose your Client Secret in client-side code.
-- Use HTTPS for all API communications.
-- Refresh tokens regularly to maintain access.
-
-This implementation follows the minimalist approach while covering the essential functionality needed for Patreon patron verification.
+export { getAuthUrl, getTokens, getPatronData, verifyMembershipTier, refreshTokens }

@@ -63,4 +63,24 @@ function isTokenExpired(user) {
   return Date.now() >= (user.tokenExpiry - bufferTime)
 }
 
+// Get user by Patreon ID
+export async function getUserByPatreonId(patreonId) {
+  return await db.collection('users').findOne({ patreonId });
+}
+
+// Update user membership status from webhook
+export async function updateUserMembership(patreonId, membershipData) {
+  return await db.collection('users').updateOne(
+    { patreonId },
+    { 
+      $set: { 
+        membershipStatus: membershipData.status,
+        membershipAmountCents: membershipData.amountCents,
+        membershipLastUpdated: membershipData.lastUpdated,
+        lastEventType: membershipData.eventType
+      }
+    }
+  );
+}
+
 export { initDb, saveUser, getUserById, isTokenExpired }

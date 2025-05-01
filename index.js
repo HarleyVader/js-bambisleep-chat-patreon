@@ -4,8 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { oauthRouter } from './routes/oauth.js';
+import { apiRouter } from './routes/api.js';
+import { webhookRouter } from './routes/webhook.js';
 import { initDb } from './db.js';
-import { tokenMiddleware } from './middleware.js';
+import { tokenMiddleware, apiRateLimiter, authRateLimiter } from './middleware.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +33,17 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
+// Apply security headers directly
+app.use((req, res, next) => {
+  // Basic security headers
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('Referrer-Policy', 'same-origin');
+  next();
+});
+
 // Token middleware
 app.use(tokenMiddleware);
 
@@ -39,8 +52,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Apply rate limiters to specific routes
+app.use('/api/', apiRateLimiter);
+app.use('/oauth/login', authRateLimiter);
+app.use('/oauth/redirect', authRateLimiter);
+
 // Routes
 app.use('/oauth', oauthRouter);
+app.use('/api', apiRouter);
+app.use('/webhooks', webhookRouter);
 
 // Basic index route
 app.get('/', (req, res) => {

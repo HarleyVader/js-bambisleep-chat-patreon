@@ -1,5 +1,31 @@
 import { getUserById, isTokenExpired, saveUser } from './db.js';
 import { refreshTokens, getPatronData } from './services/patreon.js';
+import rateLimit from 'express-rate-limit';
+
+// API rate limiting (100 requests per minute per user)
+export const apiRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip, // Limit by user ID if authenticated, IP otherwise
+  message: {
+    error: 'Too many requests. Please try again later.',
+    retryAfter: 'Retry after the rate limit window closes.'
+  }
+});
+
+// More aggressive rate limiting for authentication endpoints
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 requests per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'Too many login attempts. Please try again later.',
+    retryAfter: 'Retry after the rate limit window closes.'
+  }
+});
 
 export async function tokenMiddleware(req, res, next) {
   const userId = req.session?.patreonId;
