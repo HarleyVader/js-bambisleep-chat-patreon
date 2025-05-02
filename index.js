@@ -62,6 +62,11 @@ app.use('/oauth', oauthRouter);
 app.use('/api', apiRouter);
 app.use('/webhooks', webhookRouter);
 
+// Add simple Patreon auth redirect
+app.get('/auth/patreon', (req, res) => {
+  res.redirect('/oauth/login');
+});
+
 // Basic index route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -97,7 +102,8 @@ app.get('/status', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  const serverUrl = `http://localhost:${PORT}`;
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Server URL: ${serverUrl}`);
+  // Simple URL builder from env vars
+  const host = process.env.SERVER_HOST || 'localhost';
+  const url = `http://${host}:${PORT}`;
+  console.log(`Server running at ${url}`);
 });
