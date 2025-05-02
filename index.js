@@ -25,6 +25,10 @@ initDb().catch(err => {
 const app = express();
 const PORT = process.env.SERVER_PORT || 8888;
 
+// Trust proxy - add this to fix the X-Forwarded-For issue
+// Only set to true if behind a proxy/load balancer
+app.set('trust proxy', process.env.BEHIND_PROXY === 'true');
+
 // Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bambisleep-secret',
