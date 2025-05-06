@@ -75,6 +75,9 @@ export async function fetchPatronData(accessToken) {
   return response.json();
 }
 
+// Add this alias to match the import in oauth.js
+export const getPatronData = fetchPatronData;
+
 // Improved verification with direct membership checks
 export function verifyMembershipTier(patronData, minTierAmount = 300) {
   // Default empty result
