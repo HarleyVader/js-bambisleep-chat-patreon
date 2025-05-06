@@ -99,22 +99,25 @@ app.get('/status', async (req, res) => {
     // Import dynamically to avoid circular dependencies
     const { verifyMembershipTier } = await import('./services/patreon.js');
     
-    // Add fallback values for safety
+    // Verify membership
     const verification = verifyMembershipTier(patronData, minTierAmount) || {
-      status: 'Unknown',
-      pledgeAmount: 0,
-      hasTier: false
+      isPatron: false,
+      hasTier: false,
+      amountCents: 0,
+      tierName: 'Unknown'
     };
     
-    // Format the pledge with proper fallbacks
-    const pledgeFormatted = verification.pledgeAmount ? 
-      `$${(verification.pledgeAmount / 100).toFixed(2)}` : 
+    // Map verification properties for display
+    const status = verification.isPatron ? 'Active Patron' : 'Not Active';
+    const pledgeFormatted = verification.amountCents ? 
+      `$${(verification.amountCents / 100).toFixed(2)}` : 
       'No active pledge';
     
     res.send(`
       <h1>Patron Status</h1>
       <p>Hello ${req.user.fullName || 'Patron'}!</p>
-      <p>Status: ${verification.status || 'Unknown'}</p>
+      <p>Status: ${status}</p>
+      <p>Tier: ${verification.tierName || 'None'}</p>
       <p>Pledge: ${pledgeFormatted}</p>
       <p>Access granted: ${verification.hasTier ? 'Yes' : 'No'}</p>
       <p><a href="/oauth/logout">Logout</a></p>
