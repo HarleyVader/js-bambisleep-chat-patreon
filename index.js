@@ -25,9 +25,19 @@ initDb().catch(err => {
 const app = express();
 const PORT = process.env.SERVER_PORT || 8888;
 
-// Trust proxy - add this to fix the X-Forwarded-For issue
-// Only set to true if behind a proxy/load balancer
-app.set('trust proxy', process.env.BEHIND_PROXY === 'true');
+// More secure proxy trust configuration
+// Only trust specific proxy IP or first proxy in a chain
+if (process.env.BEHIND_PROXY === 'true') {
+  // If you know your proxy IP, specify it explicitly
+  if (process.env.PROXY_IP) {
+    app.set('trust proxy', process.env.PROXY_IP);
+  } else {
+    // Trust only the first proxy in the chain
+    app.set('trust proxy', 1);
+  }
+} else {
+  app.set('trust proxy', false);
+}
 
 // Session setup
 app.use(session({

@@ -2,29 +2,36 @@ import { getUserById, isTokenExpired, saveUser } from './db.js';
 import { refreshTokens, getPatronData } from './services/patreon.js';
 import rateLimit from 'express-rate-limit';
 
-// API rate limiting (100 requests per minute per user)
-export const apiRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id || req.ip, // Limit by user ID if authenticated, IP otherwise
-  message: {
-    error: 'Too many requests. Please try again later.',
-    retryAfter: 'Retry after the rate limit window closes.'
+// Create more secure rate limiter config
+const rateLimiterOptions = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true, // Return rate limit info in the RateLimit-* headers
+  legacyHeaders: false, // Disable the X-RateLimit-* headers
+  // Add a custom IP extraction function for more security when behind a proxy
+  keyGenerator: (req) => {
+    // Get first IP from X-Forwarded-For or use the connection IP
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    if (xForwardedFor) {
+      // Only use the first IP in the list (client IP)
+      return xForwardedFor.split(',')[0].trim();
+    }
+    return req.ip;
   }
+};
+
+// API rate limiter (stricter)
+export const apiRateLimiter = rateLimit({
+  ...rateLimiterOptions,
+  max: 100,
+  message: 'Too many API requests, please try again later.'
 });
 
-// More aggressive rate limiting for authentication endpoints
+// Auth rate limiter (more lenient)
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // 30 requests per 15 minutes
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    error: 'Too many login attempts. Please try again later.',
-    retryAfter: 'Retry after the rate limit window closes.'
-  }
+  ...rateLimiterOptions,
+  max: 20,
+  message: 'Too many authentication attempts, please try again later.'
 });
 
 export async function tokenMiddleware(req, res, next) {
