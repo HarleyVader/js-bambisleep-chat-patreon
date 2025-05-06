@@ -48,77 +48,77 @@ export async function getTokens(code) {
 // Add alias for function name
 export const exchangeCodeForTokens = getTokens;
 
-// Get patron information using the access token
-export async function getPatronInfo(accessToken) {
-  // Include fields needed to determine membership status
-  const fields = {
-    user: 'email,first_name,last_name,full_name,is_email_verified',
-    member: 'currently_entitled_amount_cents,patron_status,last_charge_date,last_charge_status'
-  };
-  
-  const includes = ['memberships', 'memberships.currently_entitled_tiers'];
-  
-  const url = new URL('https://www.patreon.com/api/oauth2/v2/identity');
-  
-  // Add fields and includes as query parameters
-  url.searchParams.append('include', includes.join(','));
-  url.searchParams.append('fields[user]', fields.user);
-  url.searchParams.append('fields[member]', fields.member);
-  
+// Fetch patron data with required fields for proper membership validation
+export async function fetchPatronData(accessToken) {
+  if (!accessToken) {
+    throw new Error('No access token provided');
+  }
+
+  // Include relevant membership data and campaign info
+  const url = 'https://www.patreon.com/api/oauth2/v2/identity?' + 
+    'include=memberships,memberships.currently_entitled_tiers,campaign' +
+    '&fields[user]=email,full_name' +
+    '&fields[member]=patron_status,currently_entitled_amount_cents' +
+    '&fields[tier]=title,amount_cents';
+
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Bearer ${accessToken}`,
+      'User-Agent': 'BambiSleep Chat (nodejs)'
     }
   });
-  
+
   if (!response.ok) {
-    console.error('Patron data error:', await response.text());
-    return { error: 'Failed to fetch patron data' };
+    throw new Error(`Patreon API error: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
-// Add alias for function name
-export const getPatronData = getPatronInfo;
+// Improved verification with direct membership checks
+export function verifyMembershipTier(patronData, minTierAmount = 300) {
+  // Default empty result
+  const result = {
+    isPatron: false,
+    hasTier: false,
+    amountCents: 0,
+    tierName: 'None'
+  };
 
-// Verify if a user has specific membership tier
-export function verifyMembershipTier(patronData, requiredAmountCents = 0) {
-  try {
-    // Check if user has a membership
-    const memberships = patronData?.included?.filter(item => item.type === 'member');
+  // Return default if no data
+  if (!patronData || !patronData.data) {
+    return result;
+  }
+
+  // Check included memberships
+  const memberships = patronData.included?.filter(item => item.type === 'member') || [];
+  
+  // Find active membership
+  const activeMembership = memberships.find(membership => 
+    membership.attributes?.patron_status === 'active_patron');
+  
+  if (activeMembership) {
+    const pledgeAmount = activeMembership.attributes.currently_entitled_amount_cents || 0;
     
-    if (!memberships || memberships.length === 0) {
-      return { isPatron: false, tier: 'none' };
+    // Find entitled tier name
+    let tierName = 'Unknown';
+    if (activeMembership.relationships?.currently_entitled_tiers?.data?.length > 0) {
+      const tierId = activeMembership.relationships.currently_entitled_tiers.data[0].id;
+      const tier = patronData.included?.find(item => 
+        item.type === 'tier' && item.id === tierId);
+      
+      if (tier) {
+        tierName = tier.attributes.title || 'Unknown';
+      }
     }
     
-    // Check active patron status and payment
-    const membership = memberships[0];
-    const isActivePatron = membership.attributes.patron_status === 'active_patron';
-    const currentAmountCents = membership.attributes.currently_entitled_amount_cents || 0;
-    
-    // Get entitled tiers if available
-    const tierIds = membership.relationships?.currently_entitled_tiers?.data?.map(tier => tier.id) || [];
-    const tiers = patronData?.included?.filter(item => 
-      item.type === 'tier' && tierIds.includes(item.id)
-    ) || [];
-    
-    // Get highest tier name
-    const tierName = tiers.length > 0 
-      ? tiers.sort((a, b) => b.attributes.amount_cents - a.attributes.amount_cents)[0]?.attributes?.title
-      : 'Unknown';
-    
-    return {
-      isPatron: isActivePatron,
-      hasTier: currentAmountCents >= requiredAmountCents,
-      amountCents: currentAmountCents,
-      tierName
-    };
-  } catch (error) {
-    console.error('Error verifying membership tier:', error);
-    return { isPatron: false, tier: 'error', error: error.message };
+    result.isPatron = true;
+    result.amountCents = pledgeAmount;
+    result.tierName = tierName;
+    result.hasTier = pledgeAmount >= minTierAmount;
   }
+  
+  return result;
 }
 
 // Refresh an expired token

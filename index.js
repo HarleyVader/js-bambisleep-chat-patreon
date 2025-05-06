@@ -113,13 +113,17 @@ app.get('/status', async (req, res) => {
       `$${(verification.amountCents / 100).toFixed(2)}` : 
       'No active pledge';
     
+    // Simple styling for better readability
     res.send(`
       <h1>Patron Status</h1>
       <p>Hello ${req.user.fullName || 'Patron'}!</p>
-      <p>Status: ${status}</p>
-      <p>Tier: ${verification.tierName || 'None'}</p>
-      <p>Pledge: ${pledgeFormatted}</p>
-      <p>Access granted: ${verification.hasTier ? 'Yes' : 'No'}</p>
+      <p>Status: <strong>${status}</strong></p>
+      <p>Tier: <strong>${verification.tierName || 'None'}</strong></p>
+      <p>Pledge: <strong>${pledgeFormatted}</strong></p>
+      <p>Access granted: <strong>${verification.hasTier ? 'Yes' : 'No'}</strong></p>
+      ${verification.hasTier ? 
+        '<p><a href="/chat">Go to Chat</a></p>' : 
+        '<p>Please subscribe to a tier of $3.00 or higher to access the chat.</p>'}
       <p><a href="/oauth/logout">Logout</a></p>
     `);
   } catch (err) {
