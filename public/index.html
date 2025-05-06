@@ -1,3 +1,4 @@
+\public\index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,31 +11,70 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      background-color: #ffeaf7;
+      color: #333;
+    }
+    h1 {
+      color: #e91e63;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .btn {
       display: inline-block;
       background: #F96854;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 25px;
       text-decoration: none;
       border-radius: 4px;
+      font-weight: bold;
+      text-align: center;
+      margin: 15px 0;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #e05d4b;
     }
     .error {
       color: red;
       margin: 10px 0;
+      padding: 10px;
+      background: #fff0f0;
+      border-radius: 4px;
+    }
+    .info {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .center {
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>BambiSleep Patron Verification</h1>
-  
-  <p>Verify your Patreon membership status:</p>
-  
-  <p id="error" class="error" style="display: none;"></p>
-  
-  <p>
-    <a href="/auth/patreon" class="btn">Login with Patreon</a>
-  </p>
+  <div class="container">
+    <h1>BambiSleep Patron Verification</h1>
+    
+    <p>Connect your Patreon account to access exclusive BambiSleep content:</p>
+    
+    <p id="error" class="error" style="display: none;"></p>
+    
+    <div class="center">
+      <a href="/auth/patreon" class="btn">Login with Patreon</a>
+    </div>
+    
+    <div class="info">
+      <p>By connecting your Patreon account, you'll get access to the content tier you're supporting.</p>
+      <p>No active pledge? <a href="https://www.patreon.com/bambisleep" target="_blank">Become a patron today!</a></p>
+    </div>
+  </div>
   
   <script>
     // Show error messages if any
