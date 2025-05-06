@@ -115,25 +115,127 @@ app.get('/status', async (req, res) => {
     
     // Simple styling for better readability
     res.send(`
-      <h1>Patron Status</h1>
-      <p>Hello ${req.user.fullName || 'Patron'}!</p>
-      <p>Status: <strong>${status}</strong></p>
-      <p>Tier: <strong>${verification.tierName || 'None'}</strong></p>
-      <p>Pledge: <strong>${pledgeFormatted}</strong></p>
-      <p>Access granted: <strong>${verification.hasTier ? 'Yes' : 'No'}</strong></p>
-      ${verification.hasTier ? 
-        '<p><a href="/chat">Go to Chat</a></p>' : 
-        '<p>Please subscribe to a tier of $3.00 or higher to access the chat.</p>'}
-      <p><a href="/oauth/logout">Logout</a></p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>BambiSleep Chat - Patron Status</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+          }
+          h1 {
+            color: #e91e63;
+            border-bottom: 2px solid #e91e63;
+            padding-bottom: 10px;
+          }
+          .status-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+          }
+          .highlight {
+            font-weight: bold;
+            color: #e91e63;
+          }
+          .btn {
+            display: inline-block;
+            background-color: #e91e63;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 5px;
+          }
+          .btn:hover {
+            background-color: #c2185b;
+          }
+          .message {
+            padding: 10px;
+            border-left: 4px solid #e91e63;
+            background-color: #fcf8f8;
+            margin: 15px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Patron Status</h1>
+        <div class="status-card">
+          <p>Hello <span class="highlight">${req.user.fullName || 'Patron'}</span>!</p>
+          <p>Status: <strong>${status}</strong></p>
+          <p>Tier: <strong>${verification.tierName || 'None'}</strong></p>
+          <p>Pledge: <strong>${pledgeFormatted}</strong></p>
+          <p>Access granted: <strong>${verification.hasTier ? 'Yes' : 'No'}</strong></p>
+        </div>
+        
+        ${verification.hasTier ? 
+          `<p class="message">Thank you for supporting BambiSleep! You have full access to our exclusive content.</p>
+           <p><a href="/chat" class="btn">Go to Chat</a></p>` : 
+          `<div class="message">
+             <p>To access the chat, please subscribe to a tier of <span class="highlight">$3.00 or higher</span>.</p>
+             <p>Your current pledge is ${pledgeFormatted}.</p>
+             <p><a href="https://www.patreon.com/bambi" target="_blank" class="btn">Upgrade on Patreon</a></p>
+           </div>`
+        }
+        <p><a href="/oauth/logout">Logout</a> | <a href="/">Return home</a></p>
+      </body>
+      </html>
     `);
   } catch (err) {
     console.error('Status page error:', err);
     res.send(`
-      <h1>Patron Status</h1>
-      <p>Hello ${req.user ? req.user.fullName : 'Patron'}!</p>
-      <p>Status: Error retrieving status</p>
-      <p>Error details: ${err.message || 'Unknown error'}</p>
-      <p><a href="/oauth/logout">Logout</a> | <a href="/">Return home</a></p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>BambiSleep Chat - Status Error</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+          }
+          h1 {
+            color: #e91e63;
+            border-bottom: 2px solid #e91e63;
+            padding-bottom: 10px;
+          }
+          .error-card {
+            border: 1px solid #f44336;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #ffebee;
+          }
+          .btn {
+            display: inline-block;
+            background-color: #e91e63;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 5px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>Patron Status</h1>
+        <div class="error-card">
+          <p>Hello ${req.user ? req.user.fullName : 'Patron'}!</p>
+          <p>Status: Error retrieving status</p>
+          <p>Error details: ${err.message || 'Unknown error'}</p>
+        </div>
+        <p><a href="/oauth/logout" class="btn">Logout</a> <a href="/" class="btn">Return home</a></p>
+      </body>
+      </html>
     `);
   }
 });
