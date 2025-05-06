@@ -84,23 +84,40 @@ app.get('/status', async (req, res) => {
   
   try {
     const patronData = await req.getPatronData();
-    const minTierAmount = 300;
+    const minTierAmount = 300; // $3.00 minimum tier
     
     // Import dynamically to avoid circular dependencies
     const { verifyMembershipTier } = await import('./services/patreon.js');
-    const verification = verifyMembershipTier(patronData, minTierAmount);
+    
+    // Add fallback values for safety
+    const verification = verifyMembershipTier(patronData, minTierAmount) || {
+      status: 'Unknown',
+      pledgeAmount: 0,
+      hasTier: false
+    };
+    
+    // Format the pledge with proper fallbacks
+    const pledgeFormatted = verification.pledgeAmount ? 
+      `$${(verification.pledgeAmount / 100).toFixed(2)}` : 
+      'No active pledge';
     
     res.send(`
       <h1>Patron Status</h1>
-      <p>Hello ${req.user.fullName}!</p>
-      <p>Status: ${verification.status}</p>
-      <p>Pledge: $${verification.pledgeAmount / 100}</p>
+      <p>Hello ${req.user.fullName || 'Patron'}!</p>
+      <p>Status: ${verification.status || 'Unknown'}</p>
+      <p>Pledge: ${pledgeFormatted}</p>
       <p>Access granted: ${verification.hasTier ? 'Yes' : 'No'}</p>
       <p><a href="/oauth/logout">Logout</a></p>
     `);
   } catch (err) {
     console.error('Status page error:', err);
-    res.send('Error fetching patron data. <a href="/">Return home</a>');
+    res.send(`
+      <h1>Patron Status</h1>
+      <p>Hello ${req.user ? req.user.fullName : 'Patron'}!</p>
+      <p>Status: Error retrieving status</p>
+      <p>Error details: ${err.message || 'Unknown error'}</p>
+      <p><a href="/oauth/logout">Logout</a> | <a href="/">Return home</a></p>
+    `);
   }
 });
 
