@@ -74,6 +74,8 @@
     
     <div class="center">
       <a href="/auth/patreon" class="btn">Login with Patreon</a>
+      <br>
+      <a href="/debug" class="btn" style="background: #666; font-size: 0.9em; margin-top: 10px;">Debug Info</a>
     </div>
     
     <div class="info">
@@ -97,6 +99,9 @@
       // Map error codes to user-friendly messages
       const errorMessages = {
         'server_error': 'Something went wrong on our end. Please try again in a few minutes.',
+        'network_error': 'Network connection failed. Please check your internet connection and try again.',
+        'database_error': 'Database connection failed. Please try again later.',
+        'token_error': 'Authentication token issue. Please try logging in again.',
         'missing_code': 'Authorization failed. Please try logging in again.',
         'access_denied': 'You denied access to your Patreon account. Please try again if you want to connect.',
         'invalid_request': 'There was a problem with the login request. Please try again.',

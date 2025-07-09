@@ -83,19 +83,25 @@
     <h1>🔧 BambiSleep Debug Tools</h1>
     
     <div class="step">
-      <h3>Step 1: Check Server Configuration</h3>
+      <h3>Step 1: Check Server Health</h3>
+      <p>Verify that the server and database connections are working:</p>
+      <a href="/health" class="btn">Server Health Check</a>
+    </div>
+    
+    <div class="step">
+      <h3>Step 2: Check Server Configuration</h3>
       <p>Verify that all environment variables are properly configured:</p>
       <a href="/config" class="btn">Check Configuration</a>
     </div>
     
     <div class="step">
-      <h3>Step 2: Test OAuth Flow</h3>
+      <h3>Step 3: Test OAuth Flow</h3>
       <p>Test the Patreon OAuth authentication process:</p>
       <a href="/auth/patreon" class="btn">Start OAuth Flow</a>
     </div>
     
     <div class="step">
-      <h3>Step 3: Check Current Status</h3>
+      <h3>Step 4: Check Current Status</h3>
       <p>If you're already logged in, check your current status:</p>
       <a href="/status" class="btn">Check Status</a>
       <a href="/api/verify" class="btn">API Verify</a>

@@ -123,6 +123,31 @@ app.get('/config', (req, res) => {
   });
 });
 
+// Simple environment health check
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: {
+      patreon_configured: !!(process.env.PATREON_CLIENT_ID && process.env.PATREON_CLIENT_SECRET),
+      database_configured: !!process.env.MONGODB_URI,
+      session_configured: !!process.env.SESSION_SECRET
+    }
+  };
+  
+  try {
+    // Test database connection
+    const { initDb } = await import('./db.js');
+    const db = await initDb();
+    health.database_status = db ? 'connected' : 'not_available';
+  } catch (error) {
+    health.database_status = 'error';
+    health.database_error = error.message;
+  }
+  
+  res.json(health);
+});
+
 // Status page
 app.get('/status', async (req, res) => {
   if (!req.user) {

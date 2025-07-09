@@ -29,6 +29,12 @@ export function getAuthUrl() {
 export async function getTokens(code) {
   console.log('Exchanging code for tokens...');
   
+  // Validate required environment variables
+  if (!PATREON_CLIENT_ID || !PATREON_CLIENT_SECRET || !REDIRECT_URL) {
+    console.error('Missing required Patreon environment variables');
+    return { error: 'invalid_client' };
+  }
+  
   try {
     const response = await fetch('https://www.patreon.com/api/oauth2/token', {
       method: 'POST',
