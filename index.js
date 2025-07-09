@@ -16,10 +16,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize database
+// Initialize database connection (but don't fail if unavailable)
 initDb().catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
+  console.warn('MongoDB connection failed, continuing without database features:', err.message);
+  // Don't exit - allow server to start for testing without MongoDB
 });
 
 const app = express();

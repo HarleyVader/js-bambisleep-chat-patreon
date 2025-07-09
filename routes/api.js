@@ -1,6 +1,6 @@
 import express from 'express';
-import { verifyMembershipTier } from '../services/patreon.js';
 import { getUserById } from '../db.js';
+import { verifyMembershipTier } from '../services/patreon.js';
 
 const router = express.Router();
 
@@ -16,7 +16,8 @@ function requireAuth(req, res, next) {
 router.get('/verify', requireAuth, async (req, res) => {
   try {
     const patronData = await req.getPatronData();
-    const verification = verifyMembershipTier(patronData);
+    const minTierAmount = 300; // $3.00 minimum tier
+    const verification = verifyMembershipTier(patronData, minTierAmount);
     
     res.json({
       verified: verification.isPatron,
@@ -32,7 +33,8 @@ router.get('/verify', requireAuth, async (req, res) => {
 router.get('/user/tier', requireAuth, async (req, res) => {
   try {
     const patronData = await req.getPatronData();
-    const tierInfo = verifyMembershipTier(patronData);
+    const minTierAmount = 300; // $3.00 minimum tier
+    const tierInfo = verifyMembershipTier(patronData, minTierAmount);
     
     res.json({
       tierName: tierInfo.tierName || 'None',

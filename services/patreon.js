@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
@@ -7,8 +7,12 @@ const {
   PATREON_CLIENT_ID,
   PATREON_CLIENT_SECRET,
   REDIRECT_URL,
-  PATREON_API_VERSION
+  PATREON_API_VERSION,
+  MY_TIER_IDS
 } = process.env;
+
+// Parse tier IDs from environment variable
+const MY_TIERS = MY_TIER_IDS ? MY_TIER_IDS.split(',').map(id => id.trim()) : [];
 
 // Generate authorization URL for Patreon login
 export function getAuthUrl() {
@@ -58,7 +62,7 @@ export async function fetchPatronData(accessToken) {
   const url = 'https://www.patreon.com/api/oauth2/v2/identity?' + 
     'include=memberships,memberships.currently_entitled_tiers,campaign' +
     '&fields[user]=email,full_name' +
-    '&fields[member]=patron_status,currently_entitled_amount_cents' +
+    '&fields[membership]=patron_status,currently_entitled_amount_cents' +
     '&fields[tier]=title,amount_cents';
 
   const response = await fetch(url, {
@@ -94,11 +98,22 @@ export function verifyMembershipTier(patronData, minTierAmount = 300) {
   }
 
   // Check included memberships
-  const memberships = patronData.included?.filter(item => item.type === 'member') || [];
+  const memberships = patronData.included?.filter(item => item.type === 'membership') || [];
   
-  // Find active membership
-  const activeMembership = memberships.find(membership => 
-    membership.attributes?.patron_status === 'active_patron');
+  // Find active membership specifically for this campaign
+  const activeMembership = memberships.find(membership => {
+    if (membership.attributes?.patron_status !== 'active_patron') return false;
+    
+    // Safety check: if MY_TIERS is empty, no one can be verified (security feature)
+    if (MY_TIERS.length === 0) {
+      console.warn('MY_TIER_IDS environment variable not set - no memberships can be verified');
+      return false;
+    }
+    
+    // Check if this membership has any of our tiers
+    const entitledTiers = membership.relationships?.currently_entitled_tiers?.data || [];
+    return entitledTiers.some(tier => MY_TIERS.includes(tier.id));
+  });
   
   if (activeMembership) {
     const pledgeAmount = activeMembership.attributes.currently_entitled_amount_cents || 0;

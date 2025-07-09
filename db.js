@@ -9,7 +9,12 @@ async function initDb() {
   if (db) return db
   
   // Connect to MongoDB using connection string
-  const uri = process.env.MONGODB_URI || 'mongodb://brandynette:CNNvfZi@192.168.0.178:27017/bambisleep-patronage?authSource=admin'
+  const uri = process.env.MONGODB_URI
+  if (!uri) {
+    console.warn('MONGODB_URI environment variable not set - running without database')
+    return null
+  }
+  
   client = new MongoClient(uri)
   
   try {
@@ -19,13 +24,19 @@ async function initDb() {
     return db
   } catch (err) {
     console.error('MongoDB connection error:', err)
-    throw err
+    console.warn('Continuing without database - some features may not work')
+    return null
   }
 }
 
 // Save user data and tokens
 async function saveUser(userData, tokens) {
   const db = await initDb()
+  if (!db) {
+    console.warn('Database not available - cannot save user data')
+    return { userId: userData.id }
+  }
+  
   const now = Date.now()
   const expiryTime = now + (tokens.expires_in * 1000)
   
@@ -53,6 +64,7 @@ async function saveUser(userData, tokens) {
 // Get user by Patreon ID
 async function getUserById(patreonId) {
   const db = await initDb()
+  if (!db) return null
   return db.collection('users').findOne({ patreonId })
 }
 
@@ -65,11 +77,18 @@ function isTokenExpired(user) {
 
 // Get user by Patreon ID
 export async function getUserByPatreonId(patreonId) {
+  const db = await initDb()
+  if (!db) return null
   return await db.collection('users').findOne({ patreonId });
 }
 
 // Update user membership status from webhook
 export async function updateUserMembership(patreonId, membershipData) {
+  const db = await initDb()
+  if (!db) {
+    console.warn('Database not available - cannot update user membership')
+    return null
+  }
   return await db.collection('users').updateOne(
     { patreonId },
     { 
