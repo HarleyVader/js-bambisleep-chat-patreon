@@ -323,5 +323,5 @@ app.listen(PORT, () => {
   // Simple URL builder from env vars
   const host = process.env.SERVER_HOST || 'localhost';
   const url = `https://${host}:${PORT}`;
-  console.log(`Server running at ${url}`);
+  console.log(`Server running at https://${host}`);
 });
