@@ -40,11 +40,18 @@
       background: #e05d4b;
     }
     .error {
-      color: red;
-      margin: 10px 0;
-      padding: 10px;
-      background: #fff0f0;
-      border-radius: 4px;
+      color: #d32f2f;
+      margin: 15px 0;
+      padding: 12px 15px;
+      background: #ffebee;
+      border: 1px solid #ffcdd2;
+      border-radius: 6px;
+      border-left: 4px solid #d32f2f;
+      font-weight: 500;
+      display: none;
+    }
+    .error.show {
+      display: block;
     }
     .info {
       text-align: center;
@@ -63,7 +70,7 @@
     
     <p>Connect your Patreon account to access exclusive BambiSleep content:</p>
     
-    <p id="error" class="error" style="display: none;"></p>
+    <p id="error" class="error"></p>
     
     <div class="center">
       <a href="/auth/patreon" class="btn">Login with Patreon</a>
@@ -82,8 +89,26 @@
     
     if (error) {
       const errorElement = document.getElementById('error');
-      errorElement.style.display = 'block';
-      errorElement.textContent = `Error: ${error.replace(/_/g, ' ')}`;
+      errorElement.classList.add('show');
+      
+      // Map error codes to user-friendly messages
+      const errorMessages = {
+        'server_error': 'Something went wrong on our end. Please try again in a few minutes.',
+        'missing_code': 'Authorization failed. Please try logging in again.',
+        'access_denied': 'You denied access to your Patreon account. Please try again if you want to connect.',
+        'invalid_request': 'There was a problem with the login request. Please try again.',
+        'unauthorized': 'Unable to verify your Patreon account. Please try again.',
+        'timeout': 'The request timed out. Please check your connection and try again.',
+        'rate_limit': 'Too many requests. Please wait a moment and try again.',
+        'failed_to_exchange_token': 'Failed to connect with Patreon. Please try again.',
+        'invalid_grant': 'The authorization code has expired. Please try logging in again.',
+        'unsupported_grant_type': 'Login method not supported. Please contact support.',
+        'invalid_client': 'Configuration error. Please contact support.'
+      };
+      
+      // Use custom message if available, otherwise format the error code
+      const friendlyMessage = errorMessages[error] || error.replace(/_/g, ' ');
+      errorElement.textContent = `Error: ${friendlyMessage}`;
     }
   </script>
 </body>
