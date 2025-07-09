@@ -31,34 +31,42 @@ async function initDb() {
 
 // Save user data and tokens
 async function saveUser(userData, tokens) {
+  console.log('Attempting to save user data for:', userData.id);
+  
   const db = await initDb()
   if (!db) {
     console.warn('Database not available - cannot save user data')
     return { userId: userData.id }
   }
   
-  const now = Date.now()
-  const expiryTime = now + (tokens.expires_in * 1000)
-  
-  // Store user with tokens
-  await db.collection('users').updateOne(
-    { patreonId: userData.id },
-    { 
-      $set: {
-        patreonId: userData.id,
-        email: userData.email,
-        fullName: userData.fullName,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        tokenExpiry: expiryTime,
-        updatedAt: now
+  try {
+    const now = Date.now()
+    const expiryTime = now + (tokens.expires_in * 1000)
+    
+    // Store user with tokens
+    const result = await db.collection('users').updateOne(
+      { patreonId: userData.id },
+      { 
+        $set: {
+          patreonId: userData.id,
+          email: userData.email,
+          fullName: userData.fullName,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          tokenExpiry: expiryTime,
+          updatedAt: now
+        },
+        $setOnInsert: { createdAt: now }
       },
-      $setOnInsert: { createdAt: now }
-    },
-    { upsert: true }
-  )
-  
-  return { userId: userData.id }
+      { upsert: true }
+    )
+    
+    console.log('User data saved successfully:', result.matchedCount > 0 ? 'updated' : 'created');
+    return { userId: userData.id }
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    throw error;
+  }
 }
 
 // Get user by Patreon ID

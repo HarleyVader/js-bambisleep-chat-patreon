@@ -13,6 +13,24 @@ import { webhookRouter } from './routes/webhook.js';
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'PATREON_CLIENT_ID',
+  'PATREON_CLIENT_SECRET', 
+  'REDIRECT_URL',
+  'SESSION_SECRET'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars);
+  console.error('Please check your .env file and ensure all required variables are set');
+  process.exit(1);
+}
+
+console.log('✅ Environment variables validated');
+
 // Setup paths for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -85,6 +103,24 @@ app.get('/auth/patreon', (req, res) => {
 // Basic index route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Debug page for troubleshooting
+app.get('/debug', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'debug.html'));
+});
+
+// Configuration diagnostic endpoint
+app.get('/config', (req, res) => {
+  res.json({
+    patreon_client_id: process.env.PATREON_CLIENT_ID ? '✅ Set' : '❌ Missing',
+    patreon_client_secret: process.env.PATREON_CLIENT_SECRET ? '✅ Set' : '❌ Missing',
+    redirect_url: process.env.REDIRECT_URL || '❌ Missing',
+    session_secret: process.env.SESSION_SECRET ? '✅ Set' : '❌ Missing',
+    my_tier_ids: process.env.MY_TIER_IDS || '⚠️ Not set (no memberships can be verified)',
+    mongodb_uri: process.env.MONGODB_URI ? '✅ Set' : '⚠️ Not set (data won\'t persist)',
+    node_env: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Status page

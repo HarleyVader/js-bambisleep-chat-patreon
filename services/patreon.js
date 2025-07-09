@@ -27,26 +27,36 @@ export function getAuthUrl() {
 
 // Exchange authorization code for access token
 export async function getTokens(code) {
-  const response = await fetch('https://www.patreon.com/api/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({
-      code,
-      grant_type: 'authorization_code',
-      client_id: PATREON_CLIENT_ID,
-      client_secret: PATREON_CLIENT_SECRET,
-      redirect_uri: REDIRECT_URL
-    })
-  });
+  console.log('Exchanging code for tokens...');
   
-  if (!response.ok) {
-    console.error('Token exchange error:', await response.text());
-    return { error: 'Failed to exchange token' };
+  try {
+    const response = await fetch('https://www.patreon.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        code,
+        grant_type: 'authorization_code',
+        client_id: PATREON_CLIENT_ID,
+        client_secret: PATREON_CLIENT_SECRET,
+        redirect_uri: REDIRECT_URL
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token exchange HTTP error:', response.status, errorText);
+      return { error: 'failed_to_exchange_token' };
+    }
+    
+    const result = await response.json();
+    console.log('Token exchange successful');
+    return result;
+  } catch (error) {
+    console.error('Token exchange network error:', error);
+    return { error: 'failed_to_exchange_token' };
   }
-  
-  return response.json();
 }
 
 // Add alias for function name
@@ -58,6 +68,8 @@ export async function fetchPatronData(accessToken) {
     throw new Error('No access token provided');
   }
 
+  console.log('Fetching patron data from Patreon API...');
+  
   // Include relevant membership data and campaign info
   const url = 'https://www.patreon.com/api/oauth2/v2/identity?' + 
     'include=memberships,memberships.currently_entitled_tiers,campaign' +
@@ -65,18 +77,27 @@ export async function fetchPatronData(accessToken) {
     '&fields[membership]=patron_status,currently_entitled_amount_cents' +
     '&fields[tier]=title,amount_cents';
 
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'User-Agent': 'BambiSleep Chat (nodejs)'
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': 'BambiSleep Chat (nodejs)'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Patreon API error: ${response.status}`, errorText);
+      throw new Error(`Patreon API error: ${response.status}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`Patreon API error: ${response.status}`);
+    const result = await response.json();
+    console.log('Patron data fetched successfully');
+    return result;
+  } catch (error) {
+    console.error('Error fetching patron data:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 // Add this alias to match the import in oauth.js

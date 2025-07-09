@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BambiSleep Debug - OAuth Flow</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #ffeaf7;
+      color: #333;
+    }
+    h1 {
+      color: #e91e63;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block;
+      background: #F96854;
+      color: white;
+      padding: 12px 25px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 5px;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #e05d4b;
+    }
+    .info {
+      background: #f0f8ff;
+      border: 1px solid #b3d9ff;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .error {
+      background: #ffebee;
+      border: 1px solid #ffcdd2;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      color: #d32f2f;
+    }
+    .success {
+      background: #e8f5e8;
+      border: 1px solid #c8e6c9;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 15px 0;
+      color: #2e7d32;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.9em;
+    }
+    .step {
+      margin: 20px 0;
+      padding: 15px;
+      border-left: 4px solid #e91e63;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 BambiSleep Debug Tools</h1>
+    
+    <div class="step">
+      <h3>Step 1: Check Server Configuration</h3>
+      <p>Verify that all environment variables are properly configured:</p>
+      <a href="/config" class="btn">Check Configuration</a>
+    </div>
+    
+    <div class="step">
+      <h3>Step 2: Test OAuth Flow</h3>
+      <p>Test the Patreon OAuth authentication process:</p>
+      <a href="/auth/patreon" class="btn">Start OAuth Flow</a>
+    </div>
+    
+    <div class="step">
+      <h3>Step 3: Check Current Status</h3>
+      <p>If you're already logged in, check your current status:</p>
+      <a href="/status" class="btn">Check Status</a>
+      <a href="/api/verify" class="btn">API Verify</a>
+    </div>
+    
+    <div class="info">
+      <h4>Debug Information</h4>
+      <p><strong>Current URL parameters:</strong></p>
+      <pre id="urlParams"></pre>
+      <p><strong>Browser Console:</strong> Check the browser console (F12) for any JavaScript errors or debug messages.</p>
+    </div>
+    
+    <div class="info">
+      <h4>Common Issues</h4>
+      <ul>
+        <li><strong>server_error:</strong> Check server logs for detailed error information</li>
+        <li><strong>missing_code:</strong> OAuth flow interrupted, try again</li>
+        <li><strong>invalid_client:</strong> Patreon app configuration issue</li>
+        <li><strong>access_denied:</strong> User denied access to Patreon account</li>
+      </ul>
+    </div>
+    
+    <p><a href="/">← Back to main page</a></p>
+  </div>
+  
+  <script>
+    // Display URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramsObj = {};
+    for (const [key, value] of urlParams) {
+      paramsObj[key] = value;
+    }
+    document.getElementById('urlParams').textContent = Object.keys(paramsObj).length > 0 
+      ? JSON.stringify(paramsObj, null, 2) 
+      : 'No URL parameters';
+    
+    // Log debug info to console
+    console.log('Debug page loaded');
+    console.log('URL parameters:', paramsObj);
+  </script>
+</body>
+</html>
