@@ -1,6 +1,5 @@
-import { patreon as patreonAPI, oauth as patreonOAuth } from 'patreon';
-
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
@@ -14,11 +13,12 @@ const {
 // Parse tier IDs from environment variable
 const MY_TIERS = MY_TIER_IDS ? MY_TIER_IDS.split(',').map(id => id.trim()) : [];
 
-// Initialize OAuth client
-const patreonOAuthClient = patreonOAuth(PATREON_CLIENT_ID, PATREON_CLIENT_SECRET);
+// APIv2 Base URL
+const PATREON_API_BASE = 'https://www.patreon.com/api/oauth2/v2';
 
-// Generate authorization URL for Patreon login
+// Generate authorization URL for Patreon login using APIv2 scopes
 export function getAuthUrl() {
+  // APIv2 scopes - more granular and secure
   const scope = 'identity identity[email] identity.memberships campaigns campaigns.members';
   
   return `https://www.patreon.com/oauth2/authorize?` +
@@ -28,9 +28,9 @@ export function getAuthUrl() {
     `scope=${encodeURIComponent(scope)}`;
 }
 
-// Exchange authorization code for access token
+// Exchange authorization code for access token using APIv2
 export async function getTokens(code) {
-  console.log('Exchanging code for tokens...');
+  console.log('Exchanging code for tokens using APIv2...');
   
   // Validate required environment variables
   if (!PATREON_CLIENT_ID || !PATREON_CLIENT_SECRET || !REDIRECT_URL) {
@@ -39,7 +39,30 @@ export async function getTokens(code) {
   }
   
   try {
-    const tokensResponse = await patreonOAuthClient.getTokens(code, REDIRECT_URL);
+    const params = new URLSearchParams({
+      code,
+      grant_type: 'authorization_code',
+      client_id: PATREON_CLIENT_ID,
+      client_secret: PATREON_CLIENT_SECRET,
+      redirect_uri: REDIRECT_URL
+    });
+
+    const response = await fetch('https://www.patreon.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'BambiSleep - Patron Verification v2'
+      },
+      body: params
+    });
+
+    const tokensResponse = await response.json();
+    
+    if (!response.ok || tokensResponse.error) {
+      console.error('Token exchange error:', tokensResponse);
+      return { error: tokensResponse.error || 'failed_to_exchange_token' };
+    }
+
     console.log('Token exchange successful');
     return tokensResponse;
   } catch (error) {
@@ -54,69 +77,41 @@ export async function getTokens(code) {
 // Add alias for function name
 export const exchangeCodeForTokens = getTokens;
 
-// Fetch patron data with required fields for proper membership validation
+// Fetch patron data using APIv2 identity endpoint
 export async function fetchPatronData(accessToken) {
   if (!accessToken) {
     throw new Error('No access token provided');
   }
 
-  console.log('Fetching patron data from Patreon API...');
+  console.log('Fetching patron data from Patreon APIv2...');
   
   try {
-    const patreonAPIClient = patreonAPI(accessToken);
+    // APIv2 identity endpoint with explicit field requests
+    const url = new URL(`${PATREON_API_BASE}/identity`);
     
-    // Use the official library to fetch current user with memberships
-    const result = await patreonAPIClient('/current_user', {
-      fields: {
-        user: 'email,full_name',
-        membership: 'patron_status,currently_entitled_amount_cents',
-        tier: 'title,amount_cents'
-      },
-      include: 'memberships,memberships.currently_entitled_tiers'
+    // Request specific fields and includes for optimal data
+    url.searchParams.append('include', 'memberships,memberships.currently_entitled_tiers');
+    url.searchParams.append('fields[user]', 'email,full_name');
+    url.searchParams.append('fields[member]', 'currently_entitled_amount_cents,patron_status,last_charge_date,last_charge_status,lifetime_support_cents');
+    url.searchParams.append('fields[tier]', 'title,amount_cents');
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': 'BambiSleep - Patron Verification v2'
+      }
     });
 
-    console.log('Patron data fetched successfully');
+    if (!response.ok) {
+      throw new Error(`APIv2 request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const patronData = await response.json();
+    console.log('Patron data fetched successfully from APIv2');
     
-    // Convert JsonApiDataStore result to our expected format
-    const userData = result.store.findAll('user')[0];
-    const memberships = result.store.findAll('membership');
-    const tiers = result.store.findAll('tier');
-    
-    return {
-      data: {
-        id: userData.id,
-        type: 'user',
-        attributes: {
-          email: userData.email,
-          full_name: userData.full_name
-        }
-      },
-      included: [
-        ...memberships.map(m => ({
-          id: m.id,
-          type: 'membership',
-          attributes: {
-            patron_status: m.patron_status,
-            currently_entitled_amount_cents: m.currently_entitled_amount_cents
-          },
-          relationships: {
-            currently_entitled_tiers: {
-              data: m.currently_entitled_tiers?.map(t => ({ id: t.id, type: 'tier' })) || []
-            }
-          }
-        })),
-        ...tiers.map(t => ({
-          id: t.id,
-          type: 'tier',
-          attributes: {
-            title: t.title,
-            amount_cents: t.amount_cents
-          }
-        }))
-      ]
-    };
+    return patronData;
   } catch (error) {
-    console.error('Error fetching patron data:', error);
+    console.error('Error fetching patron data from APIv2:', error);
     throw error;
   }
 }
@@ -124,7 +119,7 @@ export async function fetchPatronData(accessToken) {
 // Add this alias to match the import in oauth.js
 export const getPatronData = fetchPatronData;
 
-// Improved verification with direct membership checks
+// Improved verification using APIv2 member structure
 export function verifyMembershipTier(patronData, minTierAmount = 300) {
   // Default empty result
   const result = {
@@ -139,8 +134,8 @@ export function verifyMembershipTier(patronData, minTierAmount = 300) {
     return result;
   }
 
-  // Check included memberships
-  const memberships = patronData.included?.filter(item => item.type === 'membership') || [];
+  // APIv2 uses 'member' type in included array for memberships
+  const memberships = patronData.included?.filter(item => item.type === 'member') || [];
   
   // Find active membership specifically for this campaign
   const activeMembership = memberships.find(membership => {
@@ -160,7 +155,7 @@ export function verifyMembershipTier(patronData, minTierAmount = 300) {
   if (activeMembership) {
     const pledgeAmount = activeMembership.attributes.currently_entitled_amount_cents || 0;
     
-    // Find entitled tier name
+    // Find entitled tier name from APIv2 structure
     let tierName = 'Unknown';
     if (activeMembership.relationships?.currently_entitled_tiers?.data?.length > 0) {
       const tierId = activeMembership.relationships.currently_entitled_tiers.data[0].id;
@@ -181,13 +176,69 @@ export function verifyMembershipTier(patronData, minTierAmount = 300) {
   return result;
 }
 
-// Refresh an expired token
+// Refresh an expired token using APIv2
 export async function refreshTokens(refreshToken) {
   try {
-    const tokensResponse = await patreonOAuthClient.refreshToken(refreshToken);
+    const params = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: PATREON_CLIENT_ID,
+      client_secret: PATREON_CLIENT_SECRET
+    });
+
+    const response = await fetch('https://www.patreon.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'BambiSleep - Patron Verification v2'
+      },
+      body: params
+    });
+
+    const tokensResponse = await response.json();
+    
+    if (!response.ok || tokensResponse.error) {
+      console.error('Token refresh error:', tokensResponse);
+      return { error: tokensResponse.error || 'Failed to refresh token' };
+    }
+
     return tokensResponse;
   } catch (error) {
     console.error('Token refresh error:', error);
     return { error: 'Failed to refresh token' };
+  }
+}
+
+// Add new APIv2 campaign members endpoint for better member management
+export async function getCampaignMembers(accessToken, campaignId, cursor = null) {
+  try {
+    const url = new URL(`${PATREON_API_BASE}/campaigns/${campaignId}/members`);
+    
+    // Request specific member fields
+    url.searchParams.append('include', 'currently_entitled_tiers,user');
+    url.searchParams.append('fields[member]', 'currently_entitled_amount_cents,patron_status,last_charge_date,last_charge_status,lifetime_support_cents,full_name');
+    url.searchParams.append('fields[tier]', 'title,amount_cents');
+    url.searchParams.append('fields[user]', 'email,full_name');
+    
+    // Add pagination cursor if provided
+    if (cursor) {
+      url.searchParams.append('page[cursor]', cursor);
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'User-Agent': 'BambiSleep - Patron Verification v2'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`APIv2 campaign members request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching campaign members from APIv2:', error);
+    throw error;
   }
 }

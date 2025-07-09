@@ -84,7 +84,7 @@ router.post('/patreon', express.raw({ type: 'application/json' }), async (req, r
   }
 });
 
-// Process member events
+// Process member events - Updated for APIv2
 async function processMemberEvent(data, included, eventType) {
   // Extract patron ID with better error handling
   const patronId = data?.relationships?.user?.data?.id;
@@ -93,18 +93,27 @@ async function processMemberEvent(data, included, eventType) {
     return;
   }
   
-  // Get membership status with defaults
+  // APIv2 member attributes - more comprehensive
   const status = data?.attributes?.patron_status || 'unknown';
   const amountCents = data?.attributes?.currently_entitled_amount_cents || 0;
+  const lifetimeSupport = data?.attributes?.lifetime_support_cents || 0;
+  const lastChargeDate = data?.attributes?.last_charge_date;
+  const lastChargeStatus = data?.attributes?.last_charge_status;
   
   try {
-    // Find user by Patreon ID and update membership
+    // Find user by Patreon ID and update membership with APIv2 data
     await updateUserMembership(patronId, {
       status,
       amountCents,
+      lifetimeSupport,
+      lastChargeDate,
+      lastChargeStatus,
       lastUpdated: new Date(),
-      eventType
+      eventType,
+      apiVersion: 'v2'
     });
+    
+    console.log(`APIv2 webhook processed: ${eventType} for patron ${patronId}`);
   } catch (error) {
     console.error('Failed to update user membership:', error);
     throw error; // Re-throw to trigger webhook retry

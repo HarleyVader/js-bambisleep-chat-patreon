@@ -1,52 +1,189 @@
-```markdown
-# 💋 Like, Omigosh! It's the Bambi Brain-Connect Thingy! 🧠
+# 🎯 BambiSleep Chat - Patreon Integration (APIv2)
 
-## ❤️ Heyyy Bambi Babes! Let's Get You Some Special Treats! 👁️
+## � Modern Patreon Integration System
 
-*Giggle* So like, this super special app connects your bimbo brain to all the yummy hypno treats that make you feel *so good*! When your mind gets all fuzzy and pink, you just *know* you're doing it right!
+A secure, high-performance Node.js application that connects Patreon memberships to exclusive content access using the latest Patreon APIv2 standards.
 
-### 🔄 How This Works (For Silly Little Brains Like Yours):
-1. **Click the pretty button that makes you feel special**
-2. **Connect your membership account** (soooo easy!)
-3. **Watch as your brain gets instant access to the good stuff**
-4. **Enjoy all the special files that make you feel empty and happy!**
+### ✨ Key Features
+- **APIv2 Compliant**: Fully migrated to Patreon's latest API standards
+- **Secure Authentication**: OAuth2 flow with automatic token refresh
+- **Real-time Updates**: Webhook support for instant membership changes
+- **Rate Limited**: Built-in protection against abuse
+- **Membership Verification**: Automatic tier validation and access control
 
-## 💋 Member Goodies (Omigosh!):
+## 🔧 Setup & Configuration
 
-### 🧠 Basic Bambi Package
-- New hypno files every month that make your thoughts all gooey!
-- Sneak peeks that make you feel *sooo* excited
-- Join other empty-headed friends who love to be silly!
+### Environment Variables (.env)
+```bash
+# Patreon APIv2 Configuration (Required)
+PATREON_CLIENT_ID=your_client_id_here
+PATREON_CLIENT_SECRET=your_client_secret_here
+PATREON_CAMPAIGN_ID=your_campaign_id_here
 
-### ❤️ Extra Bambi Package 
-- Everything the basic silly girls get
-- Vote on what kind of empty feelings you want next!
-- Access to *all* the files that make thinking hard!
+# OAuth Configuration
+REDIRECT_URL=http://localhost:8888/oauth/redirect
 
-### 👁️ Ultimate Bambi Package
-- All the previous goodies (duh!)
-- Special requests for your special empty head
-- Track how much your IQ drops each session!
-- Get help when your brain is too mushy to figure things out!
+# Application Security
+SESSION_SECRET=your_secure_session_secret_here
 
-## 🔄 What Our Happy Empty-Headed Dolls Say:
+# Database (Optional - for persistence)
+MONGODB_URI=mongodb://localhost:27017/bambisleep
 
-> "I used to think about, like, complicated stuff? Now I just feel pretty and blank!" - @EmptyBambi
+# Webhook Security (Optional)
+PATREON_WEBHOOK_SECRET=your_webhook_secret_here
 
-> "My brain feels sooooo good when it stops working! Worth every penny!" - @DollMindNow
+# Server Configuration (Optional)
+SERVER_PORT=8888
+NODE_ENV=production
+```
 
-## 💋 It Just Works (Like Magic!):
-Our super smart connection thingy links your membership to your BambiSleep.chat profile - no need to use your brain at all!
+### Required Patreon APIv2 Scopes
+Your Patreon application must be configured with these scopes:
+- `identity` - Basic user profile information
+- `identity[email]` - User email address access
+- `campaigns` - Access to campaign information
+- `campaigns.members` - Access to member/patron data
+- `campaigns.members[email]` - Member email addresses
+- `w:campaigns.webhook` - Webhook management (if using webhooks)
 
-### 🧠 Safe for Silly Girls:
-- Your information stays secret (that's good because remembering is hard!)
-- Just one click and *poof* - instant access!
-- All your yummy treats appear like magic!
+### Patreon App Setup
+1. Go to [Patreon Clients & API Keys](https://www.patreon.com/portal/registration/register-clients)
+2. Create a new application
+3. Set your redirect URI: `http://yourdomain.com/oauth/redirect`
+4. Copy your Client ID and Client Secret to your `.env` file
+5. Note your Campaign ID from your creator page
 
-## ❤️ Ready to let your thoughts melt away?
-**[👉 Become a Special Bambi Today! 👈](https://www.patreon.com/c/bambisleepchat/membership)**
+## � Installation
 
-*When you support us, we can make more files that turn your thoughts to pink goo while building our community of happy empty dolls!*
+```bash
+# Clone the repository
+git clone <repository-url>
+cd js-bambisleep-chat-patreon
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Patreon credentials
+
+# Start the application
+npm start
+```
+
+## 🛠 API Endpoints
+
+### Authentication
+- `GET /auth/patreon` - Redirect to Patreon OAuth
+- `GET /oauth/redirect` - Handle Patreon callback
+- `GET /oauth/logout` - Logout user
+
+### Member Management
+- `GET /api/admin/tiers` - List campaign tiers (requires auth)
+- `GET /api/admin/members` - List campaign members (requires auth)
+- `GET /api/public/campaign-tiers` - Public tier information
+
+### System Status
+- `GET /health` - Application health check
+- `GET /config` - Configuration status
+- `GET /status` - User membership status (requires auth)
+
+### Webhooks
+- `POST /webhooks/patreon` - Patreon webhook endpoint
+
+## � Security Features
+
+### Rate Limiting
+- API endpoints: 100 requests per 15 minutes
+- Auth endpoints: 20 requests per 15 minutes
+- Automatic IP detection with proxy support
+
+### Data Protection
+- Secure session management
+- XSS protection headers
+- CSRF protection
+- Input validation and sanitization
+
+### Token Management
+- Automatic OAuth token refresh
+- Secure token storage
+- Token expiration handling
+
+## 🎨 Membership Verification
+
+The system automatically verifies membership tiers based on:
+- Active patron status
+- Pledge amount (configurable minimum)
+- Membership tier entitlements
+- Payment status validation
+
+```javascript
+// Example usage in your routes
+if (req.user && req.user.hasTier) {
+  // Grant access to premium content
+} else {
+  // Redirect to upgrade page
+}
+```
+
+## 📡 Webhook Integration
+
+Configure webhooks in your Patreon app to receive real-time updates:
+- Member creation/deletion
+- Pledge updates
+- Payment status changes
+
+Set your webhook URL to: `https://yourdomain.com/webhooks/patreon`
+
+## 🚦 Development
+
+### Running in Development
+```bash
+npm run dev
+```
+
+### Testing Configuration
+Visit `/config` to verify your environment setup
+Visit `/debug` for OAuth URL testing
+
+### Database Integration
+MongoDB is optional but recommended for production:
+- User data persistence
+- Session storage
+- Membership history tracking
+
+## 📋 Migration Notes (APIv1 → APIv2)
+
+This application has been fully upgraded from Patreon APIv1 to APIv2:
+
+### ✅ Completed
+- Removed deprecated `patreon` npm package
+- Implemented direct APIv2 HTTP calls
+- Updated OAuth flow for new scopes
+- Migrated from Pledges to Members resource
+- Added explicit field requests (required in APIv2)
+- Updated webhook handling for new event structure
+
+### 🔄 Breaking Changes from APIv1
+- All API responses require explicit field requests
+- Pledge resource replaced with Member resource
+- New scope requirements
+- Cursor-based pagination instead of offset-based
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Test with your Patreon developer account
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+**Note**: This application uses Patreon APIv2 which is the current maintained version. APIv1 is deprecated and will be removed in the future.
 
 *Giggle* Remember: Thinking is hard, being Bambi is easy! Let the spiral take you deeper... just stare and let go... good girl... 🔄
 
