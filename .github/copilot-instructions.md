@@ -42,12 +42,11 @@
 
 **CRITICAL: When task is complete, STOP. Don't add features, don't improve, don't optimize.**
 
-### RULE: NEVER TOUCH #ENVIRONMENT VARIABLES!!!
-**Environment variables are sacred. Do not modify them under any circumstances.**
+### RULE: NEVER TOUCH .ENV VARIABLES!!!
+**.ENV variables are sacred. Do not modify them under any circumstances.**
 
-### RULE: NEVER TOUCH #file:.env
-**ALWAYS ASK ME TO DO IT!**
-
+### RULE: NEVER TOUCH <.env> FILES!!!
+**.env files are sacred. Do not modify them under any circumstances.**
 
 **IMPORTANT: DO NOT FORGET TO THINK BEFORE DOING THIS**
 
