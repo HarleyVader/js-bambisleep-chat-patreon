@@ -31,5 +31,9 @@
     "mongodb": "^6.10.0",
     "node-fetch": "^3.3.2",
     "patreon": "^0.4.1"
+  },
+  "overrides": {
+    "node-fetch": "^3.3.2",
+    "isomorphic-fetch": "^3.0.0"
   }
 }
