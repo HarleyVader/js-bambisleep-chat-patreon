@@ -45,6 +45,9 @@
 ### RULE: NEVER TOUCH #ENVIRONMENT VARIABLES!!!
 **Environment variables are sacred. Do not modify them under any circumstances.**
 
+### RULE: NEVER TOUCH #file:.env
+**ALWAYS ASK ME TO DO IT!**
+
 
 **IMPORTANT: DO NOT FORGET TO THINK BEFORE DOING THIS**
 
