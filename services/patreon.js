@@ -80,7 +80,7 @@ export async function fetchPatronData(accessToken) {
   const url = 'https://www.patreon.com/api/oauth2/v2/identity?' + 
     'include=memberships,memberships.currently_entitled_tiers,campaign' +
     '&fields[user]=email,full_name' +
-    '&fields[membership]=patron_status,currently_entitled_amount_cents' +
+    '&fields[member]=patron_status,currently_entitled_amount_cents' +
     '&fields[tier]=title,amount_cents';
 
   try {

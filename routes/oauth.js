@@ -86,8 +86,15 @@ router.get('/redirect', async (req, res) => {
     // Redirect to status page
     res.redirect('/status');
   } catch (err) {
-    console.error('Auth callback error:', err);
+    console.error('=== OAUTH CALLBACK ERROR ===');
+    console.error('Error message:', err.message);
     console.error('Error stack:', err.stack);
+    console.error('Request query:', req.query);
+    console.error('Environment check:');
+    console.error('  PATREON_CLIENT_ID:', process.env.PATREON_CLIENT_ID ? 'SET' : 'MISSING');
+    console.error('  PATREON_CLIENT_SECRET:', process.env.PATREON_CLIENT_SECRET ? 'SET' : 'MISSING');
+    console.error('  REDIRECT_URL:', process.env.REDIRECT_URL || 'MISSING');
+    console.error('=== END ERROR DEBUG ===');
     
     // More specific error handling
     if (err.message && err.message.includes('ENOTFOUND')) {
@@ -96,6 +103,10 @@ router.get('/redirect', async (req, res) => {
       return res.redirect('/?error=database_error');
     } else if (err.message && err.message.includes('token')) {
       return res.redirect('/?error=token_error');
+    } else if (err.message && err.message.includes('invalid_client')) {
+      return res.redirect('/?error=invalid_client');
+    } else if (err.message && err.message.includes('invalid_grant')) {
+      return res.redirect('/?error=invalid_grant');
     } else {
       return res.redirect('/?error=server_error');
     }

@@ -123,6 +123,22 @@ app.get('/config', (req, res) => {
   });
 });
 
+// Debug OAuth URL endpoint
+app.get('/debug/oauth', async (req, res) => {
+  try {
+    const { getAuthUrl } = await import('./services/patreon.js');
+    
+    res.json({
+      oauth_url: process.env.REDIRECT_URL,
+      expected_callback: `${process.env.REDIRECT_URL}`,
+      patreon_client_configured: !!process.env.PATREON_CLIENT_ID,
+      note: 'The expected_callback URL must EXACTLY match your Patreon app redirect URI setting'
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load OAuth configuration' });
+  }
+});
+
 // Simple environment health check
 app.get('/health', async (req, res) => {
   const health = {
@@ -306,6 +322,6 @@ app.get('/status', async (req, res) => {
 app.listen(PORT, () => {
   // Simple URL builder from env vars
   const host = process.env.SERVER_HOST || 'localhost';
-  const url = `http://${host}:${PORT}`;
+  const url = `https://${host}:${PORT}`;
   console.log(`Server running at ${url}`);
 });

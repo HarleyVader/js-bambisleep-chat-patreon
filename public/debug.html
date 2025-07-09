@@ -76,6 +76,9 @@
       border-left: 4px solid #e91e63;
       background: #fafafa;
     }
+    .config-result {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -92,12 +95,16 @@
       <h3>Step 2: Check Server Configuration</h3>
       <p>Verify that all environment variables are properly configured:</p>
       <a href="/config" class="btn">Check Configuration</a>
+      <button class="btn" onclick="checkConfigDetails()">Auto-Check Config</button>
+      <div id="configResult" class="config-result"></div>
     </div>
     
     <div class="step">
       <h3>Step 3: Test OAuth Flow</h3>
       <p>Test the Patreon OAuth authentication process:</p>
       <a href="/auth/patreon" class="btn">Start OAuth Flow</a>
+      <button class="btn" onclick="checkOAuthConfig()">Check OAuth URLs</button>
+      <div id="oauthResult" class="config-result"></div>
     </div>
     
     <div class="step">
@@ -141,6 +148,78 @@
     // Log debug info to console
     console.log('Debug page loaded');
     console.log('URL parameters:', paramsObj);
+    
+    // Auto-check configuration
+    async function checkConfigDetails() {
+      const resultDiv = document.getElementById('configResult');
+      resultDiv.innerHTML = '<p>Checking configuration...</p>';
+      
+      try {
+        const response = await fetch('/config');
+        const config = await response.json();
+        
+        let html = '<div class="info"><h4>Configuration Status:</h4><ul>';
+        
+        // Check critical issues
+        const criticalIssues = [];
+        if (config.patreon_client_id.includes('❌')) criticalIssues.push('PATREON_CLIENT_ID missing');
+        if (config.patreon_client_secret.includes('❌')) criticalIssues.push('PATREON_CLIENT_SECRET missing');
+        if (config.redirect_url.includes('❌')) criticalIssues.push('REDIRECT_URL missing');
+        
+        if (criticalIssues.length > 0) {
+          html += '<div class="error"><strong>Critical Issues Found:</strong><ul>';
+          criticalIssues.forEach(issue => html += `<li>${issue}</li>`);
+          html += '</ul></div>';
+        }
+        
+        // Show all config
+        Object.entries(config).forEach(([key, value]) => {
+          const status = value.includes('✅') ? 'success' : value.includes('❌') ? 'error' : 'info';
+          html += `<li class="${status}"><strong>${key}:</strong> ${value}</li>`;
+        });
+        
+        html += '</ul>';
+        
+        // Add redirect URL validation
+        if (config.redirect_url && !config.redirect_url.includes('❌')) {
+          html += '<p><strong>Current redirect URL:</strong> ' + config.redirect_url + '</p>';
+          html += '<p><strong>Make sure this EXACTLY matches your Patreon app settings!</strong></p>';
+        }
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+      } catch (error) {
+        resultDiv.innerHTML = '<div class="error">Failed to check configuration: ' + error.message + '</div>';
+      }
+    }
+    
+    // Auto-check OAuth configuration
+    async function checkOAuthConfig() {
+      const resultDiv = document.getElementById('oauthResult');
+      resultDiv.innerHTML = '<p>Checking OAuth configuration...</p>';
+      
+      try {
+        const response = await fetch('/debug/oauth');
+        const config = await response.json();
+        
+        let html = '<div class="info"><h4>OAuth Configuration:</h4>';
+        html += `<p><strong>Your Redirect URL:</strong> ${config.oauth_url}</p>`;
+        html += `<p><strong>Expected Callback:</strong> ${config.expected_callback}</p>`;
+        html += '<p><strong>⚠️ IMPORTANT:</strong> The callback URL above must EXACTLY match your Patreon app settings!</p>';
+        html += '<p>Go to <a href="https://www.patreon.com/portal/registration/register-clients" target="_blank">Patreon Client Registration</a> and verify your Redirect URIs setting.</p>';
+        html += '</div>';
+        
+        resultDiv.innerHTML = html;
+      } catch (error) {
+        resultDiv.innerHTML = '<div class="error">Failed to check OAuth configuration: ' + error.message + '</div>';
+      }
+    }
+    
+    // Auto-run config check if there's an error parameter
+    if (paramsObj.error) {
+      setTimeout(checkConfigDetails, 1000);
+    }
   </script>
 </body>
 </html>
