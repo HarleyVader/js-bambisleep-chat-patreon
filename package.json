@@ -4,18 +4,17 @@
   "description": "Patreon Oauth2 Flow for Bambisleep.chat",
   "keywords": [
     "Patreon",
-    "Oauth2",
-    "PAtronage",
-    "verification",
-    "Bambisleep.chat",
-    "Tier",
-    "Fetch",
-    "for",
-    "Benefits",
-    "activation",
-    "for",
-    "bambisleep.chat"
+    "OAuth2",
+    "Bambisleep"
   ],
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "author": "HarleyVader",
+  "license": "MIT",
   "homepage": "https://github.com/HarleyVader/js-patreon-bambissleep.chat#readme",
   "bugs": {
     "url": "https://github.com/HarleyVader/js-patreon-bambissleep.chat/issues"
@@ -24,20 +23,13 @@
     "type": "git",
     "url": "git+https://github.com/HarleyVader/js-patreon-bambissleep.chat.git"
   },
-  "license": "MIT",
-  "author": "melkanea",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "test": "node index.js",
-    "start": "node index.js"
-  },
   "dependencies": {
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "express-rate-limit": "^7.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
-    "mongodb": "^6.16.0",
-    "node-fetch": "^3.3.2"
+    "mongodb": "^6.10.0",
+    "node-fetch": "^3.3.2",
+    "patreon": "^0.4.1"
   }
 }

@@ -1,5 +1,6 @@
+import { patreon as patreonAPI, oauth as patreonOAuth } from 'patreon';
+
 import dotenv from 'dotenv';
-import fetch from 'node-fetch';
 
 dotenv.config();
 
@@ -7,12 +8,14 @@ const {
   PATREON_CLIENT_ID,
   PATREON_CLIENT_SECRET,
   REDIRECT_URL,
-  PATREON_API_VERSION,
   MY_TIER_IDS
 } = process.env;
 
 // Parse tier IDs from environment variable
 const MY_TIERS = MY_TIER_IDS ? MY_TIER_IDS.split(',').map(id => id.trim()) : [];
+
+// Initialize OAuth client
+const patreonOAuthClient = patreonOAuth(PATREON_CLIENT_ID, PATREON_CLIENT_SECRET);
 
 // Generate authorization URL for Patreon login
 export function getAuthUrl() {
@@ -36,31 +39,14 @@ export async function getTokens(code) {
   }
   
   try {
-    const response = await fetch('https://www.patreon.com/api/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        code,
-        grant_type: 'authorization_code',
-        client_id: PATREON_CLIENT_ID,
-        client_secret: PATREON_CLIENT_SECRET,
-        redirect_uri: REDIRECT_URL
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Token exchange HTTP error:', response.status, errorText);
-      return { error: 'failed_to_exchange_token' };
-    }
-    
-    const result = await response.json();
+    const tokensResponse = await patreonOAuthClient.getTokens(code, REDIRECT_URL);
     console.log('Token exchange successful');
-    return result;
+    return tokensResponse;
   } catch (error) {
-    console.error('Token exchange network error:', error);
+    console.error('Token exchange error:', error);
+    if (error.message && error.message.includes('invalid_grant')) {
+      return { error: 'invalid_grant' };
+    }
     return { error: 'failed_to_exchange_token' };
   }
 }
@@ -76,30 +62,59 @@ export async function fetchPatronData(accessToken) {
 
   console.log('Fetching patron data from Patreon API...');
   
-  // Include relevant membership data and campaign info
-  const url = 'https://www.patreon.com/api/oauth2/v2/identity?' + 
-    'include=memberships,memberships.currently_entitled_tiers,campaign' +
-    '&fields[user]=email,full_name' +
-    '&fields[membership]=patron_status,currently_entitled_amount_cents' +
-    '&fields[tier]=title,amount_cents';
-
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'User-Agent': 'BambiSleep Chat (nodejs)'
-      }
+    const patreonAPIClient = patreonAPI(accessToken);
+    
+    // Use the official library to fetch current user with memberships
+    const result = await patreonAPIClient('/current_user', {
+      fields: {
+        user: 'email,full_name',
+        membership: 'patron_status,currently_entitled_amount_cents',
+        tier: 'title,amount_cents'
+      },
+      include: 'memberships,memberships.currently_entitled_tiers'
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Patreon API error: ${response.status}`, errorText);
-      throw new Error(`Patreon API error: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('Patron data fetched successfully');
-    return result;
+    
+    // Convert JsonApiDataStore result to our expected format
+    const userData = result.store.findAll('user')[0];
+    const memberships = result.store.findAll('membership');
+    const tiers = result.store.findAll('tier');
+    
+    return {
+      data: {
+        id: userData.id,
+        type: 'user',
+        attributes: {
+          email: userData.email,
+          full_name: userData.full_name
+        }
+      },
+      included: [
+        ...memberships.map(m => ({
+          id: m.id,
+          type: 'membership',
+          attributes: {
+            patron_status: m.patron_status,
+            currently_entitled_amount_cents: m.currently_entitled_amount_cents
+          },
+          relationships: {
+            currently_entitled_tiers: {
+              data: m.currently_entitled_tiers?.map(t => ({ id: t.id, type: 'tier' })) || []
+            }
+          }
+        })),
+        ...tiers.map(t => ({
+          id: t.id,
+          type: 'tier',
+          attributes: {
+            title: t.title,
+            amount_cents: t.amount_cents
+          }
+        }))
+      ]
+    };
   } catch (error) {
     console.error('Error fetching patron data:', error);
     throw error;
@@ -168,23 +183,11 @@ export function verifyMembershipTier(patronData, minTierAmount = 300) {
 
 // Refresh an expired token
 export async function refreshTokens(refreshToken) {
-  const response = await fetch('https://www.patreon.com/api/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: PATREON_CLIENT_ID,
-      client_secret: PATREON_CLIENT_SECRET
-    })
-  });
-  
-  if (!response.ok) {
-    console.error('Token refresh error:', await response.text());
+  try {
+    const tokensResponse = await patreonOAuthClient.refreshToken(refreshToken);
+    return tokensResponse;
+  } catch (error) {
+    console.error('Token refresh error:', error);
     return { error: 'Failed to refresh token' };
   }
-  
-  return response.json();
 }
