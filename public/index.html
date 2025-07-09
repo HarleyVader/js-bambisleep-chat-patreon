@@ -91,6 +91,10 @@
       const errorElement = document.getElementById('error');
       errorElement.classList.add('show');
       
+      // Clean and normalize the error parameter
+      const cleanError = error.trim().toLowerCase();
+      console.log('Raw error:', error, 'Clean error:', cleanError);
+      
       // Map error codes to user-friendly messages
       const errorMessages = {
         'server_error': 'Something went wrong on our end. Please try again in a few minutes.',
@@ -107,8 +111,9 @@
       };
       
       // Use custom message if available, otherwise format the error code
-      const friendlyMessage = errorMessages[error] || error.replace(/_/g, ' ');
-      errorElement.textContent = `Error: ${friendlyMessage}`;
+      const friendlyMessage = errorMessages[cleanError] || `Unexpected error: ${cleanError.replace(/_/g, ' ')}`;
+      errorElement.textContent = friendlyMessage;
+      console.log('Displaying message:', friendlyMessage);
     }
   </script>
 </body>
