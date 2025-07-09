@@ -1,13 +1,14 @@
-import express from 'express';
-import session from 'express-session';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { oauthRouter } from './routes/oauth.js';
+import { apiRateLimiter, authRateLimiter, tokenMiddleware } from './middleware.js';
+
 import { apiRouter } from './routes/api.js';
-import { webhookRouter } from './routes/webhook.js';
+import dotenv from 'dotenv';
+import express from 'express';
+import { fileURLToPath } from 'url';
 import { initDb } from './db.js';
-import { tokenMiddleware, apiRateLimiter, authRateLimiter } from './middleware.js';
+import { oauthRouter } from './routes/oauth.js';
+import path from 'path';
+import session from 'express-session';
+import { webhookRouter } from './routes/webhook.js';
 
 // Load environment variables
 dotenv.config();
@@ -53,7 +54,7 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
   res.setHeader('Referrer-Policy', 'same-origin');
   next();
 });

@@ -42,6 +42,10 @@
 
 **CRITICAL: When task is complete, STOP. Don't add features, don't improve, don't optimize.**
 
+### RULE: NEVER TOUCH #ENVIRONMENT VARIABLES!!!
+**Environment variables are sacred. Do not modify them under any circumstances.**
+
+
 **IMPORTANT: DO NOT FORGET TO THINK BEFORE DOING THIS**
 
 ### RULE: Think More, Code Less
